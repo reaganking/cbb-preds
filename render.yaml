@@ -1,0 +1,35 @@
+services:
+  - type: web
+    name: cbb-board
+    env: python
+    plan: starter
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app.main:app -w 2 -k uvicorn.workers.UvicornWorker -b 0.0.0.0:$PORT
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: cbb-db
+          property: connectionString
+      - key: TZ
+        value: America/Chicago
+      - key: PYTHONPATH
+        value: .
+  - type: cron
+    name: cbb-daily
+    env: python
+    schedule: "5 9 * * *"   # 9:05 AM America/Chicago
+    buildCommand: pip install -r requirements.txt
+    startCommand: python -m src.jobs.daily_predict
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: cbb-db
+          property: connectionString
+      - key: TZ
+        value: America/Chicago
+      - key: PYTHONPATH
+        value: .
+
+databases:
+  - name: cbb-db
+    plan: starter
